@@ -1,0 +1,41 @@
+name: Issue to Hugo Post
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+
+jobs:
+  convert:
+    if: contains(github.event.issue.labels.*.name, 'documentation')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate markdown post from issue
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+          ISSUE_NUM="${{ github.event.issue.number }}"
+          DATE=$(date +"%Y-%m-%dT%H:%M:%S%z")
+          SAFE_TITLE=$(echo "$TITLE" | tr ' /:' '_')
+          FILEPATH="content/posts/issue-${ISSUE_NUM}-${SAFE_TITLE}.md"
+
+          cat > "$FILEPATH" <<EOF
+---
+title: "${TITLE}"
+date: ${DATE}
+draft: false
+tags: ["documentation"]
+---
+${BODY}
+EOF
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add content/posts/*.md
+          git commit -m "auto generate post from issue #${{ github.event.issue.number }}" || echo "no change"
+          git push
