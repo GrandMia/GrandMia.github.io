@@ -2,23 +2,338 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>我的主页</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <title>地面仰望真实星空｜像素流星｜斗转星移</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        overflow: hidden;
+        background: #000000;
+        color: #ffffff;
+        font-family: sans-serif;
+      }
+      #skyCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgb(0, 0, 0);
+        z-index: -1;
+      }
+      /* 右上角导航栏 */
+      .header-nav {
+        position: fixed;
+        top: 40px;
+        right: 40px;
+        z-index: 99;
+      }
+      .header-nav a {
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+        margin-left: 26px;
+        opacity: 0.65;
+      }
+      .header-nav a:hover {
+        opacity: 0.8;
+        text-shadow:
+          0 0 8px rgba(150, 200, 255, 0.7),
+          0 0 16px rgba(100, 170, 255, 0.5);
+      }
+      hr {
+        margin: 10px;
+        border: none;
+        border-top: 1px solid #d6cdcd;
+        opacity: 0.4;
+      }
+      /* 主体内容居中容器 */
+      .main-content {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 6vw 20vw 10vw 30vw;
+        gap: 12px;
+      }
+      /* 头像 */
+      .avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 9px;
+      }
+
+      /* 文本段落通用 */
+      .desc-text {
+        font-size: 14px;
+        line-height: 1.4;
+        opacity: 0.69;
+      }
+      /* 链接高亮 */
+      .desc-text a {
+        color: #89cff0;
+        text-decoration: underline;
+      }
+
+      .desc-text a:hover {
+        text-shadow:
+          0 0 4px #89cff0,
+          0 0 10px rgba(137, 207, 240, 0.6);
+      }
+      /* 社交栏 */
+      .social-bar {
+        display: flex;
+        gap: 18px;
+        margin-top: 10px;
+      }
+      .social-bar a {
+        color: #fff;
+        font-size: 18px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+    </style>
   </head>
   <body>
-    <nav class="menu">
-      <a href="/">首页</a>
-      <!-- 跳转到markdown文章页面！！这个链接是关键 -->
-      <a href="/posts/2610-w4/">笔记文章</a>
-    </nav>
+    <canvas id="skyCanvas"></canvas>
+    <!-- 右上角导航 -->
+    <div class="header-nav">
+      <a href="/posts/toutouxiao/">偷偷笑</a>
+      <a href="/posts/huanhuanxi/">欢欢喜</a>
+      <a href="/posts/xiaxiajiao/">虾虾叫</a>
+      <!-- 两个小图标占位 -->
+      <a href="#">✉</a>
+      <hr />
+    </div>
 
-    <h1>这是手写HTML的主页面</h1>
-    <p>这里全部自由写html、css、js，随便做动画、布局</p>
+    <!-- 居中个人介绍内容 -->
+    <div class="main-content">
+      <!-- 头像，可替换为图片地址 -->
+      <img class="avatar" src="./261026-1.jpg" alt="avatar" />
 
+      <p class="desc-text">H</p>
+      <p class="desc-text">남에게 작은 것 하나라도 베풀어 본 사람은 압니다.</p>
+      <p class="desc-text">
+        그 사소한 도움이 자신에게 얼마나 큰 행복을 가져다 주는지를.
+      </p>
+      <p class="desc-text">우리 주변에는 가난하고 불행한 사람들이 많습니다.</p>
+      <p class="desc-text">
+        조금이라도 베풀 것이 있는 사람들은 가난한 그들에게 감사해야 합니다. ...
+      </p>
+      <p class="desc-text">
+        사람이 누릴 수 있는 행복 중에서 가장 큰 행복이 바로 은혜로운 자가 되는
+        일이기 때문입니다.
+      </p>
+
+      <!-- 社交平台链接 -->
+      <div class="social-bar">
+        <a href="#"></a>
+        <a href="#"></a>
+        <a href="#"></a>
+        <a href="#"></a>
+      </div>
+    </div>
     <script>
-      // 这里可以写JS交互
-      console.log("首页JS运行成功");
+      const canvas = document.getElementById("skyCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // 全局配置
+      const CONFIG = {
+        pixelBlock: 1.99, // 像素颗粒大小
+        starAmount: 1600, // 恒星数量
+        rotateRate: 0.00012, // 星空斗转速度
+        meteorPixelLen: 29, // 流星像素拖尾长度
+        meteorSpawnRate: 0.26, // 流星出现概率
+      };
+
+      let W = innerWidth;
+      let H = innerHeight;
+      let lat = 30.0; // 默认宁波北纬30°，定位后自动覆盖
+      let lng = 121.5;
+      let rotateOffset = 0;
+
+      // 画布尺寸自适应
+      function resizeCanvas() {
+        W = canvas.width = innerWidth;
+        H = canvas.height = innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // 1. 获取用户真实地理位置（决定北极星高度）
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+            console.log("已加载本地纬度：", lat.toFixed(2), "°N");
+          },
+          () => console.log("定位失败，使用默认北纬30°仰望视角"),
+        );
+      }
+
+      // 2. 恒星类：地平坐标系 地面仰望投影（核心）
+      class GroundStar {
+        constructor() {
+          // 天球原始赤经赤纬
+          this.ra = Math.random() * Math.PI * 2;
+          this.dec = (Math.random() - 0.5) * Math.PI * 0.95;
+          this.baseOpacity = Math.random() * 0.65 + 0.15;
+          this.twinkleSpeed = Math.random() * 0.007;
+          this.phase = Math.random() * Math.PI * 2;
+        }
+
+        // 天球坐标 → 地面仰望高度角/方位角 → 屏幕坐标
+        getScreenXY() {
+          const latRad = (lat * Math.PI) / 180;
+          const raTotal = this.ra + rotateOffset;
+
+          // 1. 赤道坐标转地平坐标（高度角alt、方位角az）
+          const sinAlt =
+            Math.sin(latRad) * Math.sin(this.dec) +
+            Math.cos(latRad) * Math.cos(this.dec) * Math.cos(raTotal);
+
+          // 高度角小于0 = 星星在地平线以下，不可见
+          if (sinAlt <= 0) return null;
+
+          const alt = Math.asin(sinAlt);
+          const cosAlt = Math.cos(alt);
+          const cosDec = Math.cos(this.dec);
+
+          let az = Math.acos(
+            (Math.sin(this.dec) - Math.sin(latRad) * sinAlt) /
+              (Math.cos(latRad) * cosAlt),
+          );
+
+          if (Math.sin(raTotal) > 0) az = Math.PI * 2 - az;
+
+          // 2. 球面全景铺满画布映射（仰望穹顶铺满全屏）
+          const maxRadius = Math.min(W, H) * 1.4;
+          const radiusScale = ((Math.PI / 2 - alt) / (Math.PI / 2)) * maxRadius;
+
+          const screenX = W / 2 + Math.sin(az) * radiusScale;
+          const screenY = H / 2 - Math.cos(az) * radiusScale;
+
+          // 亮度随高度衰减：靠近地平线变暗（大气消光）
+          const altBright = Math.pow(sinAlt, 0.6);
+
+          return { x: screenX, y: screenY, altBright };
+        }
+
+        draw() {
+          const pos = this.getScreenXY();
+          if (!pos) return;
+
+          this.phase += this.twinkleSpeed;
+          const twinkle = 0.61 + 0.28 * Math.sin(this.phase);
+          const alpha = this.baseOpacity * pos.altBright * twinkle;
+
+          // 像素方块绘制
+          const px = CONFIG.pixelBlock;
+          ctx.fillStyle = `rgba(255, 255, 220, ${alpha})`;
+          ctx.fillRect(
+            Math.floor(pos.x / px) * px,
+            Math.floor(pos.y / px) * px,
+            px,
+            px,
+          );
+        }
+      }
+
+      // 批量创建星空
+      const starPool = Array.from(
+        { length: CONFIG.starAmount },
+        () => new GroundStar(),
+      );
+
+      // 3. 像素风格流星（斜向下划过夜空）
+      class PixelMeteor {
+        constructor() {
+          this.x = Math.random() * W;
+          this.y = Math.random() * H * 0.35;
+          this.len = CONFIG.meteorPixelLen;
+          this.speed = Math.random() * 2 + 4;
+          this.angle = Math.PI * 0.76; // 自然斜落角度
+          this.opacity = 1;
+          this.px = CONFIG.pixelBlock;
+        }
+
+        draw() {
+          ctx.save();
+          let cx = this.x;
+          let cy = this.y;
+          const stepX = Math.cos(this.angle) * this.px;
+          const stepY = Math.sin(this.angle) * this.px;
+
+          // 逐段像素拖尾，由头到尾透明度递减
+          for (let i = 0; i < this.len; i++) {
+            const segOpa = this.opacity * (1 - i / this.len);
+            ctx.fillStyle = `rgba(255,255,220,${segOpa})`;
+            ctx.fillRect(
+              Math.floor(cx / this.px) * this.px,
+              Math.floor(cy / this.px) * this.px,
+              this.px,
+              this.px,
+            );
+            cx -= stepX;
+            cy -= stepY;
+          }
+          ctx.restore();
+        }
+
+        update() {
+          this.x += Math.cos(this.angle) * this.speed;
+          this.y += Math.sin(this.angle) * this.speed;
+          this.opacity -= 0.024;
+        }
+
+        isDead() {
+          return this.x < -80 || this.y > H + 80 || this.opacity <= 0;
+        }
+      }
+
+      let meteorList = [];
+
+      // 定时随机生成流星
+      function autoSpawnMeteor() {
+        setInterval(() => {
+          if (Math.random() > 1 - CONFIG.meteorSpawnRate) {
+            meteorList.push(new PixelMeteor());
+          }
+        }, 850);
+      }
+      autoSpawnMeteor();
+
+      // 4. 主动画循环
+      function renderLoop() {
+        // 残影拖影，夜空顺滑感
+        ctx.fillStyle = "rgba(9, 4, 27, 0.73)";
+        ctx.fillRect(0, 0, W, H);
+
+        // 星空整体缓慢旋转 = 斗转星移
+        rotateOffset += CONFIG.rotateRate;
+
+        // 绘制所有可见恒星（只画地平线以上）
+        starPool.forEach((star) => star.draw());
+
+        // 更新绘制流星，清理失效流星
+        meteorList.forEach((m) => {
+          m.update();
+          m.draw();
+        });
+        meteorList = meteorList.filter((m) => !m.isDead());
+
+        requestAnimationFrame(renderLoop);
+      }
+      renderLoop();
     </script>
   </body>
 </html>
