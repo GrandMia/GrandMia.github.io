@@ -1,10 +1,9 @@
-name: Deploy Hugo site to Pages
-
+name: Build and Deploy Hugo to Pages
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # 支持网页上手动触发部署
 
 permissions:
   contents: read
@@ -19,25 +18,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true # 重点！拉取PaperMod子模块，不然主题丢失
           fetch-depth: 0
 
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Install Hugo
-        uses: peaceiris/actions-hugo@v2
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: "latest"
 
-      - name: Build with Hugo
+      - name: Build site
+        run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
         env:
           HUGO_ENVIRONMENT: production
-        run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -45,12 +44,12 @@ jobs:
           path: ./public
 
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
