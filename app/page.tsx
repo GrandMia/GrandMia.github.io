@@ -5,10 +5,10 @@ export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const canvas = canvasRef.current!;
+    const _ctx = canvas.getContext("2d");
+    if (!_ctx) return;
+    const ctx = _ctx;
 
     const CONFIG = {
       pixelBlock: 1.99,
@@ -67,7 +67,7 @@ export default function Home() {
         const altBright = Math.pow(sinAlt, 0.6);
         return { x: screenX, y: screenY, altBright };
       }
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         const pos = this.getScreenXY();
         if (!pos) return;
         this.phase += this.twinkleSpeed;
@@ -106,7 +106,7 @@ export default function Home() {
         this.opacity = 1;
         this.px = CONFIG.pixelBlock;
       }
-      draw() {
+      draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
         let cx = this.x;
         let cy = this.y;
@@ -126,6 +126,7 @@ export default function Home() {
         }
         ctx.restore();
       }
+
       update() {
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
@@ -152,10 +153,10 @@ export default function Home() {
       ctx.fillStyle = "rgba(9, 4, 27, 0.73)";
       ctx.fillRect(0, 0, W, H);
       rotateOffset += CONFIG.rotateRate;
-      starPool.forEach((star) => star.draw());
+      starPool.forEach((star) => star.draw(ctx));
       meteorList.forEach((m) => {
         m.update();
-        m.draw();
+        m.draw(ctx);
       });
       meteorList = meteorList.filter((m) => !m.isDead());
       rafId = requestAnimationFrame(renderLoop);

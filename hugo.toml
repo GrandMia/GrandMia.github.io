@@ -1,0 +1,16 @@
+# 网站访问根地址，上线到 GitHub Pages 时使用
+baseURL = "https://grandmia.github.io/"
+# 网站语言
+languageCode = "zh-cn"
+# 网站标题
+title = "我的博客"
+# 指定使用的主题
+theme = "PaperMod"
+# 关闭Hugo自带主题首页，使用 static/index.html 自定义HTML作为根首页
+disableKinds = ["home"]
+
+[params]
+  # 作者名称
+  author = "GrandMia"
+  # 默认主题样式，auto=跟随系统明暗模式
+  defaultTheme = "auto"

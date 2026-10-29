@@ -1,0 +1,9 @@
+.menu {
+  background: #222;
+  padding: 1rem;
+}
+.menu a {
+  color: white;
+  margin-right: 20px;
+  text-decoration: none;
+}
